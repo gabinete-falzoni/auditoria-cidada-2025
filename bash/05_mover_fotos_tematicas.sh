@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# Rodar esse script de dentro da pasta /gitlab/auditoria-cidada-2025/bash/
+
+# Pasta de trabalho: /gitlab/auditoria-cidada-2025/dados/tmp
+PROCESSED_FILES_FOLDER="../dados/tmp/tmp_fotos_tematicas";
+PROCESSED_FILES_FOLDER_THEME="../dados/fotos/fotos_tematicas";
+FOLDER_01="01_medicao"
+FOLDER_02="02_pintura"
+FOLDER_03="03_pavimento"
+FOLDER_04="04_esquina"
+FOLDER_05="05_sp_156"
+FOLDER_06="06_outros"
+FOLDER_07="07_invasao"
+FOLDER_08="08_apagamento"
+
+# Elegante não é, mas criar todas as pastas de destino...
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_01;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_02;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_03;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_04;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_05;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_06;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_07;
+mkdir -p $PROCESSED_FILES_FOLDER_THEME/$FOLDER_08;
+
+# E mover arquivos temáticos para lá
+echo "Movendo imagens temáticas para pasta de destino..."; 
+mv $PROCESSED_FILES_FOLDER/$FOLDER_01/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_01;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_02/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_02;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_03/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_03;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_04/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_04;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_05/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_05;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_06/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_06;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_07/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_07;
+mv $PROCESSED_FILES_FOLDER/$FOLDER_08/*.jpg $PROCESSED_FILES_FOLDER_THEME/$FOLDER_08;
+
+echo "Removendo pastas temporárias"
+cd $PROCESSED_FILES_FOLDER;
+find . -maxdepth 1 -type d -empty -delete
+cd ../
+find . -maxdepth 1 -type d -empty -delete
+
+echo "Feito."; 
+
+echo "\nSINCRONIZAR ARQUIVOS APAGADOS E MEDIÇÕES NAS FOTOS ORIGINAIS - RODAR SCRIPT R \n"
