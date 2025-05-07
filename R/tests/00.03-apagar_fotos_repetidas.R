@@ -46,7 +46,7 @@ pasta_orig_med <- sprintf('%s/fotos_medicoes_originais', pasta_orig)
 dir.create(pasta_orig_med, recursive = TRUE, showWarnings = FALSE)
 
 # Quais são as fotos selecionadas como sendo de medição?
-fotos_medicao <- data.frame(imgs = basename(list.files(pasta_redu_med, recursive = TRUE))) %>% distinct()
+fotos_medicao <- data.frame(imgs = basename(list.files(pasta_orig_med, recursive = TRUE))) %>% distinct()
 head(fotos_medicao)
 
 fotos_originais <- data.frame(imgs = basename(list.files(pasta_orig, recursive = FALSE)),

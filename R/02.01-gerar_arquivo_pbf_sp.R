@@ -55,7 +55,7 @@ out_pbf_file <- sprintf('%s/sao_paulo-latest.osm.pbf', pasta_dados_osm)
 # Uma vez com o (a) arquivo do sudeste do Brasil no formato OSM e (b) o
 # polígono de São Paulo no formato .poly, rodar o osmosis no terminal:
 
-message('\nIniciando o osmosis - este passo deve demorar cerca de 70 minutos para rodar.\n')
+message('\nIniciando o osmosis - este passo deve demorar cerca de 2h15 minutos para rodar.\n')
 osmosis_path <- sprintf("/usr/bin/osmosis")
 arg_o1 <- sprintf('--read-pbf file="%s"', pbf_file)
 arg_o2 <- sprintf('--bounding-polygon file="%s"', poly_file)

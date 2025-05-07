@@ -20,6 +20,7 @@ mkdir -p "$PROCESSED_FILES_FOLDER/05_sp_156"
 mkdir -p "$PROCESSED_FILES_FOLDER/06_outros"
 mkdir -p "$PROCESSED_FILES_FOLDER/07_invasao"
 mkdir -p "$PROCESSED_FILES_FOLDER/08_apagamento"
+mkdir -p "$PROCESSED_FILES_FOLDER/09_tachao"
 
 # Reduzir todas as imagens
 # https://stackoverflow.com/questions/43253889/imagemagick-convert-how-to-tell-if-images-need-to-be-rotated

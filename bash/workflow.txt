@@ -1,0 +1,11 @@
+1. Baixar arquivos .zip da pasta do Google Drive;
+
+2. Rodar scripts bash 01 a 04;
+
+3. Separar fotos por tema. Se a foto se refere a mais de um tema (ex. pintura, asfalto, tachão), copiá-la para todas essas pastas. Essa separação vai servir só para fazer uma demarcação no shapefile, então não há problema em estarem repetidas;
+
+4. Rodar os scripts bash 05 e 06;
+
+5. Neste momento, todas as fotos estão separadas por tema. Entrar no R e rodar o script 00.01, que vai organizar as fotos originais de acordo com a separação temática realizada;
+
+6. Rodar o script R 00.02, para criar o shapefile a partir das coordenadas por foto e marcações de temas.

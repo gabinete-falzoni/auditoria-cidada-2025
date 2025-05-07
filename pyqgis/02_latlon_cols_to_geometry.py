@@ -4,7 +4,7 @@
 from qgis.core import QgsProject, QgsGeometry, QgsPointXY
 
 # Get the layer by name
-track_points_layer = QgsProject.instance().mapLayersByName('20250218_auditoria')[0]
+track_points_layer = QgsProject.instance().mapLayersByName('gpx_para_revisao')[0]
 
 # Check if the layer exists
 if track_points_layer is None:
@@ -16,8 +16,8 @@ else:
     # Iterate through selected features
     for feature in track_points_layer.selectedFeatures():
         # Get the latitude and longitude values from the attributes
-        latitude = feature['lat']
-        longitude = feature['lon']
+        latitude = feature['lat_orig']
+        longitude = feature['lon_orig']
 
         # Create a new QgsPointXY from the latitude and longitude
         new_point = QgsPointXY(longitude, latitude)

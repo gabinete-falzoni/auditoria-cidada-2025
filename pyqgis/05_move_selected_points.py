@@ -2,8 +2,12 @@ from qgis.core import QgsProject, QgsSpatialIndex, QgsGeometry, QgsPointXY, QgsM
 from PyQt5.QtCore import QVariant
 
 # Get the layers
-gpx_layer = QgsProject.instance().mapLayersByName('20250218_auditoria')[0]
-network_layer = QgsProject.instance().mapLayersByName('86157_ciclovias_ciclofaixas_points')[0]
+gpx_layer = QgsProject.instance().mapLayersByName('gpx_para_revisao')[0]
+network_layer = QgsProject.instance().mapLayersByName('sao_paulo_osm_filtrado_points_wgs84')[0]
+# Se precisar, usar Processing Toolbox > Points along geometry para criar pontos em
+# trechos do OSM (camada sao_paulo_osm_filtrado) que não estão com infra cicloviária ainda
+# Conversão: 2 metros = 0.000018 em graus
+# network_layer = QgsProject.instance().mapLayersByName('Interpolated points')[0]
 
 # Check if the layers are valid
 if not gpx_layer or not network_layer:
@@ -20,7 +24,7 @@ else:
     selected_network_features = network_layer.selectedFeatures()
 
     # Sort the selected gpx_features based on ordem_pontos to ensure sequential order
-    selected_gpx_features = sorted(selected_gpx_features, key=lambda f: f['ordem_pontos'])
+    selected_gpx_features = sorted(selected_gpx_features, key=lambda f: f['fid'])
 
     # Track the last fid and ordem_pontos used for network_layer
     last_fid = -1  # Start with an impossible fid value to allow the first association
@@ -38,7 +42,7 @@ else:
         gpx_geom = gpx_feat.geometry()
         gpx_point = gpx_geom.asPoint()
 
-        current_ordem_pontos = gpx_feat['ordem_pontos']
+        current_ordem_pontos = gpx_feat['fid']
         print(f"Processing track_point with ordem_pontos = {current_ordem_pontos}")
 
         # Initialize variables to track the closest network point
@@ -62,7 +66,7 @@ else:
         if closest_network_point:
             # Update the geometry of the gpx point to match the network point
             network_point = closest_network_point.geometry().asPoint()
-            print(f"Associated to network point with fid = {closest_network_point['fid']} and distance = {closest_distance}")
+            # print(f"Associated to network point with fid = {closest_network_point['fid']} and distance = {closest_distance}")
 
             new_geom = QgsGeometry.fromPointXY(QgsPointXY(network_point.x(), network_point.y()))
             gpx_layer.dataProvider().changeGeometryValues({gpx_feat.id(): new_geom})

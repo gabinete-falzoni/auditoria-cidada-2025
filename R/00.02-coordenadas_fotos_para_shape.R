@@ -45,6 +45,7 @@ fotos_sp_156  <- fotos %>% filter(str_starts(origem, '05'))
 fotos_outros  <- fotos %>% filter(str_starts(origem, '06'))
 fotos_invasao <- fotos %>% filter(str_starts(origem, '07'))
 fotos_apagmto <- fotos %>% filter(str_starts(origem, '08'))
+fotos_tachao  <- fotos %>% filter(str_starts(origem, '09'))
 
 # Insrir marcações temáticas no dataframe único
 fotos <-
@@ -56,12 +57,14 @@ fotos <-
          sp_156  = ifelse(X1 %in% fotos_sp_156$X1, TRUE, FALSE),
          outros  = ifelse(X1 %in% fotos_outros$X1, TRUE, FALSE),
          invasao = ifelse(X1 %in% fotos_invasao$X1, TRUE, FALSE),
-         apagamento = ifelse(X1 %in% fotos_apagmto$X1, TRUE, FALSE)) %>%
+         apagamento = ifelse(X1 %in% fotos_apagmto$X1, TRUE, FALSE),
+         tachao  = ifelse(X1 %in% fotos_tachao$X1, TRUE, FALSE)) %>%
   select(-origem)
 
 # Limpar ambiente
 rm(tsv_files, fotos_todas, fotos_medicao, fotos_pintura, fotos_pavimto,
-   fotos_esquina, fotos_sp_156, fotos_outros, fotos_invasao, fotos_apagmto)
+   fotos_esquina, fotos_sp_156, fotos_outros, fotos_invasao, fotos_apagmto,
+   fotos_tachao)
 
 # img_extensions <- c('HEIC', 'jpg', 'JPG', 'jpeg', 'JPEG')
 # filtered_files <- fotos[sapply(fotos, function(file) tolower(tools::file_ext(file)) %in% tolower(img_extensions))]
@@ -101,7 +104,12 @@ fotos <- fotos %>% st_as_sf(coords = c('lon', 'lat'), crs = 4326, remove = FALSE
 
 # Criar endereço de referência das fotos, para visualizar no QGIS
 pasta_reduz_full_path <- sprintf('%s/%s', getwd(), pasta_reduz) %>% str_replace('R\\/\\.\\.\\/', '')
-fotos <- fotos %>% mutate(imagepath = str_c(pasta_reduz_full_path, X1, sep = '/'), .before = 'lat')
+# path_claros <- 'C:\\Users\\User\\Desktop\\AC2025\\Claros\\fotos\\fotos_reduzidas\\'
+# path_claros <- 'D:\\Fotos_auditoria\\Claros_total\\fotos_originais\\fotos_medicoes_originais_renomeadas\\Renomeadas\\'
+path_claros <- 'D:\\Fotos_auditoria\\Claros_total\\fotos\\fotos_reduzidas\\'
+fotos <- fotos %>% mutate(imagepath  = str_c(pasta_reduz_full_path, X1, sep = '/'),
+                          imagepath2 = str_c(path_claros, X1, sep = ''),
+                          .before = 'lat')
 # fotos %>% st_drop_geometry() %>% select(imagepath)
 
 # Registrar ordem das fotos
@@ -109,30 +117,31 @@ fotos <- fotos %>% arrange(X1)
 
 # Exportar shapefile no formato 20250218_auditoria.gpkg
 out_file <- sprintf('%s/auditoria_cidada_2025.gpkg', pasta_dados)
+st_write(fotos, out_file, driver = 'GPKG', append = FALSE, delete_layer = TRUE)
 
-# TODO: Melhorar este sistema de backup: temos que reconhecer novas colunas no
-# shape e as linhas já existentes, inserindo somente as linhas novas
-if (file.exists(out_file)) {
-  bkp_file <- sprintf('%s/%s_BKP_auditoria_cidada_2025.gpkg', pasta_gpkgs, format(Sys.Date(), "%Y%m%d"))
-
-  shape_atual <- read_sf(out_file)
-  fotos <- fotos %>% filter(!X1 %in% shape_atual$X1) %>% rename(geom = geometry)
-
-  fotos <-
-    shape_atual %>%
-    # Descartar temporariamente esta coluna, vai ser refeita em seguida
-    select(-ordem_pontos) %>%
-    # mutate(apagamento = FALSE, .before = 'imagepath') %>%
-    # rename(sp_156 = poda) %>%
-    rbind(fotos) %>%
-    mutate(ordem_pontos = row_number(), .after = 'X1') %>%
-    arrange(X1)
-
-  file.copy(out_file, bkp_file, overwrite = TRUE)
-
-  st_write(fotos, out_file, driver = 'GPKG', append = FALSE)
-
-} else {
-  st_write(fotos, out_file, driver = 'GPKG', append = FALSE)
-}
+# # TODO: Melhorar este sistema de backup: temos que reconhecer novas colunas no
+# # shape e as linhas já existentes, inserindo somente as linhas novas
+# if (file.exists(out_file)) {
+#   bkp_file <- sprintf('%s/%s_BKP_auditoria_cidada_2025.gpkg', pasta_gpkgs, format(Sys.Date(), "%Y%m%d"))
+#
+#   shape_atual <- read_sf(out_file)
+#   fotos <- fotos %>% filter(!X1 %in% shape_atual$X1) %>% rename(geom = geometry)
+#
+#   fotos <-
+#     shape_atual %>%
+#     # Descartar temporariamente esta coluna, vai ser refeita em seguida
+#     select(-ordem_pontos) %>%
+#     # mutate(apagamento = FALSE, .before = 'imagepath') %>%
+#     # rename(sp_156 = poda) %>%
+#     rbind(fotos) %>%
+#     mutate(ordem_pontos = row_number(), .after = 'X1') %>%
+#     arrange(X1)
+#
+#   file.copy(out_file, bkp_file, overwrite = TRUE)
+#
+#   st_write(fotos, out_file, driver = 'GPKG', append = FALSE)
+#
+# } else {
+#   st_write(fotos, out_file, driver = 'GPKG', append = FALSE)
+# }
 

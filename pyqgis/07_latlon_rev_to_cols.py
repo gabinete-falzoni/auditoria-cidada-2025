@@ -1,4 +1,4 @@
-# Puxar latitude e longitude originais para duas colunas
+# Puxar latitude e longitude atuais para duas colunas
 
 from qgis.core import QgsProject, QgsField, QgsFeature
 from PyQt5.QtCore import QVariant
@@ -17,20 +17,20 @@ else:
     existing_fields = [field.name() for field in track_points_layer.fields()]
 
     # Add new fields for latitude and longitude (if not already added)
-    if 'lat_orig' not in existing_fields:
-        lat_field = QgsField('lat_orig', QVariant.Double)
+    if 'lat' not in existing_fields:
+        lat_field = QgsField('lat', QVariant.Double)
         track_points_layer.dataProvider().addAttributes([lat_field])
 
-    if 'lon_orig' not in existing_fields:
-        lon_field = QgsField('lon_orig', QVariant.Double)
+    if 'lon' not in existing_fields:
+        lon_field = QgsField('lon', QVariant.Double)
         track_points_layer.dataProvider().addAttributes([lon_field])
 
     # Update the layer's field definitions
     track_points_layer.updateFields()
 
     # Get the correct field indexes after adding the new fields
-    lat_idx = track_points_layer.fields().indexOf('lat_orig')
-    lon_idx = track_points_layer.fields().indexOf('lon_orig')
+    lat_idx = track_points_layer.fields().indexOf('lat')
+    lon_idx = track_points_layer.fields().indexOf('lon')
 
     # Iterate through features in the layer
     for feature in track_points_layer.getFeatures():
