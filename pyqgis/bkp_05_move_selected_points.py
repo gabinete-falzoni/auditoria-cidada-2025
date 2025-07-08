@@ -3,16 +3,6 @@ from PyQt5.QtCore import QVariant
 
 # Get the layers
 gpx_layer = QgsProject.instance().mapLayersByName('gpx_para_revisao')[0]
-
-# Caso camada esteja como editável, vindo do script anterior, gravar mudanças
-if gpx_layer.isEditable():
-    # Optionally test if there are changes
-    if gpx_layer.isModified():        
-        gpx_layer.commitChanges()  # Save edits
-    else:        
-        gpx_layer.rollBack()       # No changes, just exit editing mode
-
-
 network_layer = QgsProject.instance().mapLayersByName('sao_paulo_osm_filtrado_points_wgs84')[0]
 # Se precisar, usar Processing Toolbox > Points along geometry para criar pontos em
 # trechos do OSM (camada sao_paulo_osm_filtrado) que não estão com infra cicloviária ainda

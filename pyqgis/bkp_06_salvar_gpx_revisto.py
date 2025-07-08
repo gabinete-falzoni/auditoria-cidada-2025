@@ -1,14 +1,12 @@
 # Salvar arquivo GPX revisto na pasta, com opções GPX_USE_EXTENSIONS e FORCE_GPX_TRACK
-# concat('/mnt/fern/Dados/Campo_Camera360/03_image_sequences/', "X1")
-# concat('/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360/03_image_sequences/', "X1")
 
 from qgis.core import QgsProject, QgsVectorFileWriter
 
 # Get the layer (replace 'gpx_para_revisao' with your layer name)
 layer = QgsProject.instance().mapLayersByName('gpx_para_revisao')[0]
 # Define the output file path
-path = '/mnt/fern/Dados/Campo_Camera360/00_pasta_de_trabalho/gpx_revisto.gpx'
-# path = '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360/00_pasta_de_trabalho/gpx_revisto.gpx'
+# path = '/mnt/fern/Dados/Campo_Camera360/00_pasta_de_trabalho/gpx_revisto.gpx'
+path = '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360/00_pasta_de_trabalho/gpx_revisto.gpx'
 
 # Create SaveVectorOptions instance
 save_options = QgsVectorFileWriter.SaveVectorOptions()
@@ -36,8 +34,7 @@ _writer = QgsVectorFileWriter.writeAsVectorFormatV3(
 )
 
 # Check for errors
-# if _writer == QgsVectorFileWriter.NoError:
-#     print("GPX export successful!")
-# else:
-#     print(f"GPX export failed: {_writer}")
-print("GPX export successful!")
+if _writer == QgsVectorFileWriter.NoError:
+    print("GPX export successful!")
+else:
+    print(f"GPX export failed: {_writer}")

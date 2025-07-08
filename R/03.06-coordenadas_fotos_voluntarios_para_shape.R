@@ -1,4 +1,5 @@
-# Antes de rodar esse script, rodar o script bash 07_extrair_coordenadas_geograficas_medicoes_campo.sh
+# Antes de rodar esse script, rodar no terminal, dentro da pasta de fotos do
+# Mapillary: exiftool -filename -gpslatitude -gpslongitude -T -r . > "../fotos_voluntarios.tsv"
 
 library('tidyverse')
 library('tidytable')
@@ -9,8 +10,10 @@ library('measurements')
 
 
 # Estrutura de pastas
-pasta_dados <- '../dados/dados_trabalhados'
-pasta_fotos_campo_medicoes <- '../../../BKP_Auditoria_Cidada_2025_Fotos_Originais/fotos_originais/fotos_medicoes_campo'
+pasta_fotos_campo <- '/mnt/fern/Dados/Campo_Camera360'
+pasta_fotos_volunt_reduz <- sprintf('%s/06_fotos_voluntarios_reduzidas', pasta_fotos_campo)
+pasta_publicacao  <- sprintf('%s/07_publicacao', pasta_fotos_campo)
+pasta_fotos_tsv   <- sprintf('%s/tsv_fotos', pasta_publicacao)
 
 
 # ------------------------------------------------------------------------------
@@ -18,19 +21,19 @@ pasta_fotos_campo_medicoes <- '../../../BKP_Auditoria_Cidada_2025_Fotos_Originai
 # ------------------------------------------------------------------------------
 
 # Ler arquivos de coordenadas das fotos
-tsv_files <- data.frame(arqs = list.files(pasta_fotos_campo_medicoes,
-                                          pattern = '.*\\.tsv$',
+tsv_files <- data.frame(arqs = list.files(pasta_fotos_tsv,
+                                          pattern = '.*\\voluntarios.tsv$',
                                           full.names = TRUE))
 
 fotos <- map_df(tsv_files$arqs,
                 ~ read_delim(.x, delim = '\t', col_types = 'ccc', col_names = FALSE)
-                  # mutate(origem = basename(.x), .before = 1),
+                # mutate(origem = basename(.x), .before = 1),
                 # .id = "file_id",
 )
 
 
 # Remover fotos sem coordenadas
-fotos %>% filter(X2 == '-' | is.na(X2) | str_starts(X2, '0')) #%>% filter(!str_ends(X1, '.txt'))
+# fotos %>% filter(X2 == '-' | is.na(X2) | str_starts(X2, '0')) #%>% filter(!str_ends(X1, '.txt'))
 fotos <- fotos %>% filter(X2 != '-' & !is.na(X2) & !str_starts(X2, '0')) #%>% filter(!str_ends(X1, '.txt'))
 
 
@@ -39,7 +42,7 @@ fotos <- fotos %>% filter(X2 != '-' & !is.na(X2) & !str_starts(X2, '0')) #%>% fi
 
 
 # ------------------------------------------------------------------------------
-# Converter coordenadas geográficas
+# Extrair e converter coordenadas geográficas das fotos cropped do Mapillary
 # ------------------------------------------------------------------------------
 
 # Testar separação de latlon, caso tenha dado erro
@@ -64,24 +67,46 @@ fotos <-
   mutate(lat = as.double(lat),
          lon = as.double(lon))
 
+head(fotos)
+tail(fotos)
 
-
-# Transformar em shapefile
-fotos <- fotos %>% st_as_sf(coords = c('lon', 'lat'), crs = 4326, remove = FALSE)
-# mapview(fotos, cex = 1, legend = FALSE)
 
 # Criar endereço de referência das fotos, para visualizar no QGIS
-pasta_imagepath_1 <- sprintf('%s/%s', getwd(), pasta_fotos_campo_medicoes) %>% str_replace('R\\/\\.\\.\\/', '')
-# pasta_imagepath_1 <- sprintf('%s/%s', '/mnt/fern/Dados/', pasta_fotos_campo_medicoes) %>% str_replace_all('R?\\/?\\.\\.\\/', '')
-pasta_imagepath_2 <- 'D:\\Fotos_auditoria\\Claros_total\\fotos_originais\\fotos_medicoes_campo\\'
-fotos <- fotos %>% mutate(imagepath = str_c(pasta_imagepath_1, X1, sep = '/'),
-                          imagepath2 = str_c(pasta_imagepath_2, X1, sep = ''),
+fotos <- fotos %>% mutate(imagepath = str_c(pasta_fotos_volunt_reduz, X1, sep = '/'),
                           .before = 'lat')
 # fotos %>% st_drop_geometry() %>% select(imagepath)
 
+# URL para fotos no servidor: coluna foto_url, <img src='../fotos/2022-05-10_13-23-52.jpg'>
+# https://falzoni.com.br/auditoria_cidada/fotos_voluntarios/20250215_092203.jpg
+fotos <- fotos %>% mutate(foto_url = str_c("<img src='../fotos_voluntarios/", X1, "'>", sep = ''), .after = X1)
+# Para visualização local
+# fotos <- fotos %>% mutate(foto_url = str_c("<img src='", pasta_fotos_volunt_reduz, "/", X1, "'>", sep = ''), .after = X1)
+
+
+# Link Mapillary para a área da foto:
+# <a href="NTA_ENTE.pdf" target="_blank">NTA_ENTE.pdf</a>
+# https://www.mapillary.com/app/user?lat=-23.50242890063116&lng=-46.61111296893637&z=19.9&menu=false&panos=true&all_coverage=false&dateFrom=2025-04-09&dateTo=2025-06-30&username%5B%5D=gabinete_falzoni&pKey=1277960299983573
+# fotos <-
+#   fotos %>%
+#   mutate(mapillary_url = str_c(
+#     '<h3><a href="https://www.mapillary.com/app/user?lat=', lat,
+#     '&lng=', lon,
+#     # '&z=18&menu=false&panos=true&all_coverage=false&dateFrom=2025-04-09&dateTo=2025-06-30&username%5B%5D=gabinete_falzoni&mapStyle=Esri+navigation" target="_blank">',
+#     '&z=18&menu=false&panos=true&all_coverage=false&dateFrom=2025-04-09&dateTo=2025-06-30&username%5B%5D=gabinete_falzoni" target="_blank">',
+#     'Clique aqui para ver fotos 360° (Mapillary)',
+#     '</a></h3>',
+#     sep = ''),
+#     .after = X1)
+
+
+# Transformar em shapefile
+fotos <- fotos %>% st_as_sf(coords = c('lon', 'lat'), crs = 4326, remove = TRUE)
+# mapview(fotos, cex = 1, legend = FALSE)
+
+
 # Registrar ordem das fotos
-fotos <- fotos %>% arrange(X1)
+fotos <- fotos %>% arrange(X1) %>% rename(foto = X1)
 
 # Exportar shapefile no formato 20250218_auditoria.gpkg
-out_file <- sprintf('%s/auditoria_cidada_2025_medicoes_campo.gpkg', pasta_dados)
+out_file <- sprintf('%s/auditoria_cidada_2025_C_fotos_volutarios_reduzidas.gpkg', pasta_publicacao)
 st_write(fotos, out_file, driver = 'GPKG', append = FALSE, delete_layer = TRUE)

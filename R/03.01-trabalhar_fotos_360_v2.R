@@ -2,10 +2,14 @@
 # arquivos de vídeo .insv com o timelapse das fotos gravadas pela câmra insta 360
 # Exemplo:
 # 00_qgis_visualizacao_gpx_tracks.qgz (arquivo de visualização, já na pasta)
-# --- pasta "fila":
+# --- pasta "00_pasta_de_trabalho/fila":
 # --- 2025-04-09_14-04-01.gpx
 # --- VID_20250409_140416_00_003.insv
 # --- VID_20250409_140416_10_003.insv
+# Esse script vai gerar o arquivo gpx_para_revisao.gpkg, que deve ser revisto
+# no QGIS usando o arquivo 00_qgis_visualizacao_gpx_tracks.qgz que está na
+# pasta_dados. O script 03.03 move os arquivos para a pasta_dados, então se
+# esses arquivos gpx e de vídeo forem os primeiros, mover manualmente para lá.
 
 library('tidyverse')
 library('tidylog')
@@ -16,8 +20,8 @@ library('mapview')
 
 
 # Estrutura de pastas
-pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
-# pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
+# pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
+pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
 pasta_dados <- sprintf('%s/00_pasta_de_trabalho', pasta_base)
 pasta_fila  <- sprintf('%s/fila', pasta_dados)
 pasta_fotos_ret <- sprintf('%s/03_image_sequences', pasta_base)
@@ -40,6 +44,11 @@ arg_o1 <- sprintf('-i "%s"', arqs_videos[1])
 arg_o2 <- sprintf('-i "%s"', arqs_videos[2])
 # arg_o3 <- sprintf('-filter_complex "[0:v][1:v]hstack=inputs=2" -c:v libx264 -crf 23 -preset ultrafast -y %s', out_mp4)
 arg_o3 <- sprintf('-filter_complex "[0:v][1:v]hstack=inputs=2" -c:v libx264 -crf 0 -y %s', out_mp4)
+# Caso o arquivo original tenha sido gravado como vídeo (arquivo maior que 500 MB),
+# extrair como 1 FPS em vez de 29.97 (-r 1)
+if (file.size(arqs_videos[1]) > 500000000) {
+  arg_o3 <- sprintf('-r 0.25 -filter_complex "[0:v][1:v]hstack=inputs=2" -c:v libx264 -crf 0 -y %s', out_mp4)
+  }
 system2(command = ffmpeg_path, args = c(arg_o1, arg_o2, arg_o3))
 
 # Limpar ambiente
@@ -73,11 +82,18 @@ file.remove(out_mp4)
 # Gerar imagens retilineares a partir das imagens 360°
 # ------------------------------------------------------------------------------
 
+fov2 <- 90
+# # Se câmera tiver grabado muito pra cima, baixar mais do que o usual aumentando
+# # a angulação
+# if (str_starts(basename_jpgs, '20250509')) {
+#   fov2 <- 135
+# }
+
 # Extrair as porções frontais dos frames
 # ffmpeg -framerate 1 -start_number 1 -i 20250409_143230_%05d.jpg -vf "v360=e:rectilinear:yaw=0:h_fov=90:v_fov=90" -y 00_lala_%05d.jpg
 message('\nExtraindo frames retilineares das imagens 360° com o ffmpeg.\n')
 arg_o1 <- sprintf('-framerate 1 -start_number 1 -i %s/%s_%%05d.jpg', pasta_fotos, basename_jpgs)
-arg_o2 <- sprintf('-vf "v360=e:rectilinear:yaw=0:h_fov=90:v_fov=90"', fov, fov)
+arg_o2 <- sprintf('-vf "v360=e:rectilinear:yaw=0:h_fov=%s:v_fov=%s"', fov2, fov2)
 arg_o3 <- sprintf('-y %s/%s_%%05d_ret.jpg', pasta_fotos_ret, basename_jpgs)
 system2(command = ffmpeg_path, args = c(arg_o1, arg_o2, arg_o3))
 
@@ -130,7 +146,7 @@ if (qtd_fotos > qtd_ptos) {
 
   # Adicionar linhas ao gpx, copiando os valores do primeiro registro (agora, na
   # última linha)
-  ultima_linha <- gpx %>% slice(n())
+  ultima_linha <- gpx %>% tail(1)
 
   # Linhas a adicionar
   novas_linhas <- qtd_fotos - qtd_ptos
@@ -139,8 +155,7 @@ if (qtd_fotos > qtd_ptos) {
   gpx <- gpx %>% bind_rows(replicate(novas_linhas, ultima_linha, simplify = FALSE))
 
   # Juntar dataframes e voltar à ordem original de gravação
-  images <- cbind(images, gpx) %>% arrange(X1)
-
+  images <- cbind(images, gpx) %>% arrange(X1) %>% select(-Time)
 
   # Precisamos redistribuir proporcionalmente os pontos no espaço, para facilitar
   # a revisão da posição deles no QGIS
@@ -156,48 +171,61 @@ if (qtd_fotos > qtd_ptos) {
 
   mapview(linha)
 
-  # 2. Transformar linha em uma sequência de pontos, na qual a quantidade desses
-  # pontos está definida por qtd_fotos
-  pontos_equidistantes <- linha %>%
-    st_line_sample(n = qtd_fotos, type = "regular") %>%
-    st_cast("POINT") %>%
-    st_sf() %>%
-    # Transformar de volta em WGS84 para obter os latlon
-    st_transform(4326)
+} else if (qtd_fotos <= qtd_ptos) {
+  # 1. Converter os pontos em sf LINESTRING
+  linha <- gpx %>%
+    select(lon = Longitude, lat = Latitude) %>%
+    st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%  # WGS84
+    # Transformar para SIRGAS 23S para considerar distâncias corretamente
+    st_transform(31983) %>%
+    summarise(geometry = st_combine(geometry)) %>%
+    st_cast("LINESTRING")
 
-  mapview(pontos_equidistantes, cex = 2)
-
-
-  # Conferir a partir do original
-  # gpx %>% select(lon = Longitude, lat = Latitude) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% mapview(col.regions = 'red', cex = 3)
-
-  # Juntar novas coordenadas geográficas em um sf
-  images <- cbind(pontos_equidistantes, images)
-
-  # Converter em dataframe com colunas de latlon
-  # pontos_equidistantes <-
-  #   pontos_equidistantes %>%
-  #   mutate(id = row_number()) %>%
-  #   mutate(
-  #     lon = st_coordinates(.)[,1],
-  #     lat = st_coordinates(.)[,2]
-  #   ) %>%
-  #   select(id, lat, lon)
-
-  # rm(ultima_linha, qtd_fotos, qtd_ptos, linha, pontos_equidistantes)
+  mapview(linha)
 }
+
+# 2. Transformar linha em uma sequência de pontos, na qual a quantidade desses
+# pontos está definida por qtd_fotos
+pontos_equidistantes <- linha %>%
+  st_line_sample(n = qtd_fotos, type = "regular") %>%
+  st_cast("POINT") %>%
+  st_sf() %>%
+  # Transformar de volta em WGS84 para obter os latlon
+  st_transform(4326)
+
+mapview(pontos_equidistantes, cex = 2)
+
+
+# Conferir a partir do original
+# gpx %>% select(lon = Longitude, lat = Latitude) %>% st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% mapview(col.regions = 'red', cex = 3)
+
+# Juntar novas coordenadas geográficas em um sf
+images <- cbind(pontos_equidistantes, images)
+
+# Converter em dataframe com colunas de latlon
+# pontos_equidistantes <-
+#   pontos_equidistantes %>%
+#   mutate(id = row_number()) %>%
+#   mutate(
+#     lon = st_coordinates(.)[,1],
+#     lat = st_coordinates(.)[,2]
+#   ) %>%
+#   select(id, lat, lon)
+
+# rm(ultima_linha, qtd_fotos, qtd_ptos, linha, pontos_equidistantes)
+
 
 # O GPX não está gravando os pontos no intervalo de tempo correto, que seria de
 # 4 segundos. Vamos pegar a primeira ocorrência de tempo e forçar um registro a
 # cada 4s, substituindo os tempos originais
-min_time <- as.POSIXct(min(images$Time), origin = "1970-01-01")
+min_time <- as.POSIXct(min(gpx$Time), origin = "1970-01-01")
 
 # Criar série a cada 4s
 time_series <- min_time + seq(0, by = 4, length.out = nrow(images))
 time_series <- data.frame(Time = time_series)
 
 # Substituir tempos no gpx
-images <- images %>% select(-Time) %>% cbind(time_series)
+images <- images %>% cbind(time_series)
 
 
 # Gerar shapefile a partir do gpx

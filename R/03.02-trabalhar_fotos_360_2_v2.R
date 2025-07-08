@@ -1,14 +1,17 @@
 # Nesta continuação do script anterior, vão ser inseridas as coordenadas de GPS
 # nas fotos e gerar um shape para conferência. As fotos já vão estar prontas
-# para subir no Mapillary
+# para subir no Mapillary. Este script deve ser rodado após a revisão dos pontos
+# GPS no QGIS e exportação do arquivo gpx_revisto.gpx via o script PyQGIS de lá.
 # Na pasta de trabalho, devem estar os arquivos:
-# 00_qgis_visualizacao_gpx_tracks.qgz (arquivo de visualização, já na pasta)
-# 2025-04-09_14-04-01.gpx
-# gpx_para_revisao.gpkg
-# gpx_revisto.gpx
-# VID_20250409_140416_00_003.insv
-# VID_20250409_140416_10_003.insv
-# # --- pasta "fila" (contendo arquivos seguintes)
+# --- pasta "00_pasta_de_trabalho":
+# --- 00_areas_invasao_ciclofaixas.gpkg (arquivo criado, já na pasta)
+# --- 00_qgis_visualizacao_gpx_tracks.qgz (arquivo de visualização, já na pasta)
+# --- 2025-04-09_14-04-01.gpx
+# --- gpx_para_revisao.gpkg
+# --- gpx_revisto.gpx (exportado do QGIS)
+# --- VID_20250409_140416_00_003.insv
+# --- VID_20250409_140416_10_003.insv
+# --- pasta "00_pasta_de_trabalho/fila" (contendo arquivos seguintes)
 
 library('tidyverse')
 library('tidylog')
@@ -19,8 +22,8 @@ library('measurements')
 
 
 # Estrutura de pastas
-pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
-# pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
+# pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
+pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
 pasta_dados <- sprintf('%s/00_pasta_de_trabalho', pasta_base)
 pasta_fotos_ret <- sprintf('%s/03_image_sequences', pasta_base)
 
@@ -60,7 +63,7 @@ int_seg <- 4
 
 # Atualizar timestamp a cada x segundos - -overwrite_original é opcional
 # exiftool '-XMP:DateTimeOriginal+<0:0:${filesequence;$_*=4}' $(ls -1v *.jpg)
-message('\nInserindo timestamp inicial nas fotos.\n')
+message('\nAtualizar valores do timestamp a cada X segundos.\n')
 cmd <- sprintf(
   "%s '-XMP:DateTimeOriginal+<0:0:${filesequence;$_*=%s}' -overwrite_original $(ls -1v %s/*.jpg)",
   exiftool_path, int_seg, pasta_fotos

@@ -4,8 +4,8 @@
 library('fs') # copiar pastas
 
 # Estrutura de pastas
-pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
-# pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
+# pasta_base  <- '/media/livre/Expansion/Dados_Comp_Gabinete/Campo_Camera360'
+pasta_base  <- '/mnt/fern/Dados/Campo_Camera360'
 pasta_dados <- sprintf('%s/00_pasta_de_trabalho', pasta_base)
 
 
@@ -15,10 +15,10 @@ pasta_dados <- sprintf('%s/00_pasta_de_trabalho', pasta_base)
 
 # Remover arquivos da pasta de trabalho
 rm_file1 <- sprintf('%s/gpx_para_revisao.gpkg', pasta_dados)
-rm_file2 <- sprintf('%s/gpx_revisto.qmd', pasta_dados)
+# rm_file2 <- sprintf('%s/gpx_revisto.qmd', pasta_dados)
 out_tsv <- sprintf('%s/00_fotos_todas.tsv', pasta_dados)
 out_file <- sprintf('%s/00_shape_fotos.gpkg', pasta_dados)
-file.remove(out_tsv, out_file, rm_file1, rm_file2)
+file.remove(out_tsv, out_file, rm_file1)
 gpx <- list.files(pasta_dados, pattern = '.*\\.gpx$', full.names = TRUE)
 file.remove(arqs_videos, gpx)
 
@@ -50,10 +50,15 @@ file.copy(proximo_gpx, pasta_fila)
 
 
 # Quais são os próximos arquivos a serem processados?
-data.frame(arqs = list.files(pasta_fila)) %>%
+this <-
+  data.frame(arqs = list.files(pasta_fila)) %>%
   mutate(times = case_when(str_detect(arqs, 'insv') ~ str_sub(arqs, 14, 19),
                            TRUE ~ str_replace_all(str_sub(arqs, 12, 19), '-', '')
   ))
+this
+
+time_dif <- as.integer(this$times[1]) - as.integer(this$times[2])
+message(sprintf('Diferença de tempo: %s segundo(s)', time_dif))
 
 
 # Garantidos que os arquivos foram copiados, remover da pasta geral

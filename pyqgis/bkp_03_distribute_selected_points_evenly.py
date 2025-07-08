@@ -8,17 +8,14 @@ from qgis.core import (
     QgsFeatureRequest
 )
 
+# --- Get the active layer ---
+# layer = iface.activeLayer()
 # --- Get the specific layer by name ---
 layer = QgsProject.instance().mapLayersByName('gpx_para_revisao')[0]
-
-# --- Validation checks ---
 if not layer or layer.selectedFeatureCount() < 2:
     raise Exception("Select at least 2 points in a point layer")
 
-if layer.selectedFeatureCount() == layer.featureCount():
-    raise Exception("All points are selected — please select only the ones to space evenly.")
-
-# --- CRS setup: WGS84 to UTM ---
+# --- CRS setup: WGS84 to UTM (you can refine UTM zone based on location) ---
 wgs84 = QgsCoordinateReferenceSystem("EPSG:4326")
 utm = QgsCoordinateReferenceSystem("EPSG:31983")
 transform_to_utm = QgsCoordinateTransform(wgs84, utm, QgsProject.instance())
@@ -31,7 +28,7 @@ points = [(f.id(), transform_to_utm.transform(f.geometry().asPoint())) for f in 
 # --- Sort points by X (or Y, or custom logic) ---
 # points.sort(key=lambda tup: tup[1].x())
 # Sort by feature ID
-points.sort(key=lambda tup: tup[0])
+points.sort(key=lambda tup: tup[0])  
 
 # --- Compute spacing ---
 start_pt = points[0][1]
@@ -56,9 +53,3 @@ for i, (fid, _) in enumerate(points):
 # --- Commit changes ---
 layer.commitChanges()
 iface.mapCanvas().refresh()
-
-# Turn "toggle editing" back on to continue editing
-layer.startEditing()
-
-# Activate the Vertex Tool
-iface.actionVertexTool().trigger()
